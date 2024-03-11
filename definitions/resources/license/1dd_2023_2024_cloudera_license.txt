@@ -1,0 +1,29 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+{
+  "deactivationDate" : "2025-02-27",
+  "features" : [ ],
+  "name" : "Australian_CLD-201711-176240",
+  "uuid" : "00650b42-2955-4c18-9072-64e5d49d9388",
+  "version" : 1,
+  "startDate" : "2024-02-28",
+  "expirationDate" : "2025-02-27"
+}
+-----BEGIN PGP SIGNATURE-----
+Version: BCPG v1.46
+
+iQIcBAEBCAAGBQJl4X62AAoJECXwRXLmH8tlTS8P/RoicC+SYs9F1NSgsxUOOZzC
+zr3skCwoTOljC5o+rXf/EtNzLSqaR7YptcI5Od1okjGwQtwdiHbhfCtn/KS+frGc
+S4cf2j1wjb85FURkdX9q5+ZtE0vkp1MYPRZ88mJy7xNuot3DB8w7IEXasE3qASGQ
+zaVKBA4R25zzmYP5w7RZ4bKv5ZG3nxQivHIy33IVBhbe0x6yHoKld6QJ2oYP77wS
+Ivi5LdPvyPTAJbYcCIJ75HpAk8R2WUhZ7537tWnIYI0+ZW03R03LqPGbqb1QfqxY
+HPXsn/kNBAc4ufYOE3QEW2ddVU/z5oKjhTxzO6m0VsoWnfW7a+3TzDc5WjIiAek+
+NiP0T63vERAhw9ROTWfxV+34UptDTRU2Lqcpf2qVWgf3qRxivWxgyQ2b33pSThXw
+C65uCuxR//IG4Ikn/dfA6eKzn/BBoem7dD8bkoFa9P8oGvnCKQiLY+lavCKxciVJ
+hcd5Q/SXg/fg9uj5MinBWd9oLYsj4ET+3ulcM+huGlDkTUwFDgcIS9+qOmEAQxlj
+IGeBCdwGe/L4j01fSqVt0KYJpWIeuawZHKScneXLF67luGq7XBGnsntX84QFRhVh
+I2vAzH5k7KVfeyh6lzFdEV4adLeDwCFNPAfu+qnuFLFpfHzBv9QJaXOvddmHdJNd
+h0NgNRUVwqAZtyreMzMg
+=BZ+H
+-----END PGP SIGNATURE-----
