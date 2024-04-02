@@ -13,228 +13,373 @@
 # limitations under the License.
 
 ---
-#name_prefix:      "1dd"  <== failing validation with ansible template (line 54 cloudera.exe/roles/init_deployment/tasks/validate.yml )
-name_prefix:        "onedd"
 
-#//TODO Change to the correct values          
-domain:             "<krb.domain>"  # The deployment subdomain (private) managed by the local AD server
-realm:              "<KRB.REALM>"  # The Kerberos realm managed by the local AD server
+clusters:
+  - name: OneDD-Dev
+    type: base
+    services:
+      - ATLAS
+      - HBASE
+      - HDFS
+      - HIVE
+      - HIVE_ON_TEZ
+      - INFRA_SOLR
+      - KAFKA
+      - OZONE
+      - QUEUEMANAGER
+      - RANGER
+      - RANGER_KMS
+      - SPARK3_ON_YARN
+      - TEZ
+      - YARN
+      - ZOOKEEPER
+      - HUE
+      - KNOX
+    security:
+      kerberos: true
+      tls: true
+      hdfs_encryption: false      
+    repositories: "{{ repositories }}"
+    
+    configs:
+      ATLAS:
+        SERVICEWIDE:
+          kerberos.auth.enable: true
+        ATLAS_SERVER:
+          atlas_authentication_method_file: true
+          atlas_admin_password: "{{ common_password }}"
+          atlas_sso_knox_enabled: false
+          atlas_authentication_method_trustedproxy: false
+          atlas_authentication_method_pam: false
+          atlas_authentication_method_ldap: true
+          atlas_authentication_method_ldap_url: "{{ auth_provider.ldap_url }}"
+          atlas_authentication_method_ldap_bind_dn: "{{ auth_provider.ldap_bind_user_dn }}"
+          atlas_authentication_method_ldap_bind_password: "{{ auth_provider.ldap_bind_password }}"
+          atlas_authentication_method_ldap_userDNpattern: "uid={0},{{ auth_provider.ldap_search_base.user }}"
+          atlas_authentication_method_ldap_base_dn: "{{ auth_provider.ldap_search_base.user }}"
+          atlas_authentication_method_ldap_user_searchfilter: "{{ auth_provider.ldap_search_filter.user }}"
+          atlas_authentication_method_ldap_groupSearchBase: "{{ auth_provider.ldap_search_base.group }}"
+          atlas_authentication_method_ldap_groupSearchFilter: "{{ auth_provider.ldap_search_filter.member }}"
+          atlas_authentication_method_ldap_groupRoleAttribute: "{{ auth_provider.ldap_attr_group_name }}"
+          atlas_authentication_method_ldap_type: "{{ auth_provider.type | lower }}"
+          atlas_authentication_method_ldap_default_role: "ROLE_ADMIN"
+      HBASE:
+        SERVICEWIDE:
+          hadoop_secure_web_ui: false
+          hbase_graceful_stop_timeout: 5
+        REGIONSERVER:
+          hbase_regionserver_java_heapsize: 268435456
+        MASTER:
+          hbase_master_java_heapsize: 134217728
+        GATEWAY:
+          hbase_client_java_heapsize: 134217728
+      HDFS:
+        SERVICEWIDE:
+          hdfs_verify_ec_with_topology_enabled: false
+          enable_ranger_authorization: true
+          hadoop_secure_web_ui: false
+          trusted_realms: "{{ realm | upper }}, {{ realm | lower }}"
+          #hdfs_verify_ec_with_topology_enabled: false
+        DATANODE:
+          datanode_java_heapsize: 134217728
+          dfs_data_dir_list: /dfs/dn
+          #dfs_data_dir_list: "/data1/dfs/dn,/data2/dfs/dn,/data3/dfs/dn,/data4/dfs/dn"
+          dfs_datanode_data_dir_perm: '700'
+          dfs_datanode_max_locked_memory: 0
+          dfs_datanode_failed_volumes_tolerated: 0
+        GATEWAY:
+          hdfs_client_java_heapsize: 134217728
+        NAMENODE:
+          dfs_name_dir_list: /dfs/nn
+          #dfs_name_dir_list: "/hdfs/nn/dfs/nn,/hdfs/jn/dfs/nn"
+          namenode_java_heapsize: 134217728
+          role_config_suppression_namenode_java_heapsize_minimum_validator: true
+          #autofailover_enabled: true
+          #dfs_federation_namenode_nameservice: 1DD-Dev
+          #dfs_namenode_quorum_journal_name: 1DD-Dev
+          #dfs_namenode_servicerpc_address: 8022
+          #dfs_namenode_service_handler_count: 63
+          #dfs_namenode_handler_count: 63
+          #namenode_java_heapsize: 4294967296
+          #fs_trash_interval: 5760
+          dfs_safemode_min_datanodes: 0
+        SECONDARYNAMENODE:
+          secondary_namenode_java_heapsize: 134217728
+          fs_checkpoint_dir_list: /dfs/snn
+          #fs_checkpoint_dir_list: "/hdfs/nn/dfs/snn,/hdfs/jn/dfs/snn"
+        JOURNALNODE:
+          dfs_journalnode_edits_dir: /dfs/jn
+          journalNode_java_heapsize: 1073741824
+      HIVE:
+        SERVICEWIDE:
+          ranger_plugin_urlauth_filesystem_schemes: "file:,wasb:,adl:"
+        GATEWAY:
+          hive_client_java_heapsize: 134217728
+        HIVEMETASTORE:
+          hive_metastore_java_heapsize: 268435456
+          metastore_canary_health_enabled: false
+      HIVE_ON_TEZ:
+        SERVICEWIDE:
+          ranger_plugin_urlauth_filesystem_schemes: "file:,wasb:,adl:"          
+      KAFKA:
+        SERVICEWIDE:
+          kerberos.auth.enable: true
+          offsets.topic.replication.factor: 1
+          transaction.state.log.replication.factor: 1
+          transaction.state.log.min.isr: 1
+          producer.metrics.enable: false
+          service_config_suppression_kafka_broker_count_validator: true
+          service_config_suppression_offsets.topic.replication.factor: true
+          service_config_suppression_transaction.state.log.replication.factor: true
+        KAFKA_BROKER:
+          graceful_stop_timeout: 5
+      OZONE:
+        SERVICEWIDE:
+          ozone.security.enabled: true
+          ozone.service.id: ozone1
+          ozone.security.http.kerberos.enabled: false
+          service_config_suppression_ozone_manager_count_validator: true
+          service_config_suppression_storage_container_manager_count_validator: true
+        OZONE_MANAGER:
+          om_max_heap_size: 2048
+        STORAGE_CONTAINER_MANAGER:
+          scm_max_heap_size: 2048      
+        OZONE_DATANODE:
+          ozone-conf/ozone-site.xml_role_safety_valve: |
+             <property>
+               <name>hdds.datanode.client.port</name>
+               <value>9874</value>
+             </property>
+          ozone_datanode_heap_size: 2048
+        OZONE_PROMETHEUS:
+          ozone.prometheus.http-port: 19090
+      QUEUEMANAGER:
+        SERVICEWIDE:
+          queuemanager_database_type: "mysql"          # with version 7.1.9.3, this forces QM to use H2 db, and not do upgrade to pgsql
+          queuemanager_database_host: "null.fef0.lab"
+          queuemanager_database_port: 9999
+      RANGER:
+        SERVICEWIDE:
+          keyadmin_user_password: "{{ common_password }}"
+          rangeradmin_user_password: "{{ common_password }}"
+          rangertagsync_user_password: "{{ common_password }}"
+          rangerusersync_user_password: "{{ common_password }}"
+        RANGER_ADMIN:
+          ranger_admin_max_heap_size: 1024
+          ranger_authentication_method: "{{ auth_provider.type | upper }}"
+          ranger.ldap.url: "{{ auth_provider.ldap_url }}"
+          ranger.ldap.bind.dn: "{{ auth_provider.ldap_bind_user_dn }}"
+          ranger_ldap_bind_password: "{{ auth_provider.ldap_bind_password }}"
+          ranger.ldap.user.dnpattern: "uid={0},{{ auth_provider.ldap_search_base.user }}"
+          ranger.ldap.base.dn: "{{ auth_provider.ldap_base_dn }}"
+          ranger.ldap.user.searchfilter: "{{ auth_provider.ldap_search_filter.user }}"
+          ranger.ldap.group.searchfilter: "{{ auth_provider.ldap_search_filter.member }}"
+          ranger.ldap.group.searchbase: "{{ auth_provider.ldap_search_base.group }}"
+          ranger.ldap.group.roleattribute: "{{ auth_provider.ldap_attr_group_name }}"
+          ranger.ldap.referral: "follow"
+        RANGER_TAGSYNC:
+          ranger_tagsync_max_heap_size: 1024
+        RANGER_USERSYNC:
+          ranger_usersync_max_heap_size: 1024
+          ranger.usersync.ldap.binddn: "{{ auth_provider.ldap_bind_user_dn }}"
+          ranger.usersync.ldap.url: "{{ auth_provider.ldap_url }}"
+          ranger_usersync_ldap_ldapbindpassword: "{{ auth_provider.ldap_bind_password }}"
+          ranger.usersync.ldap.referral: follow
+          ranger.usersync.ldap.username.caseconversion: lower
+          ranger.usersync.ldap.groupname.caseconversion: lower
+          ranger.usersync.ldap.grouphierarchylevels: 0
+          # ranger.usersync.group.based.role.assignment.rules: '&ROLE_SYS_ADMIN:g:ranger-admin-rg'
+          ranger.usersync.group.memberattributename: "{{ auth_provider.ldap_attr_group_membership }}"
+          ranger.usersync.group.nameattribute: "{{ auth_provider.ldap_attr_group_name }}"
+          ranger.usersync.group.objectclass: "{{ auth_provider.ldap_object_class.group }}" # group
+          ranger.usersync.group.searchbase: "{{ auth_provider.ldap_search_base.group }}"
+#          ranger.usersync.group.searchfilter: ""
+#          ranger.usersync.ldap.user.searchfilter: ""
+          ranger.usersync.ldap.user.nameattribute: "{{ auth_provider.ldap_attr_user_name }}"
+          ranger.usersync.ldap.user.objectclass: "{{ auth_provider.ldap_object_class.user }}" # person
+          ranger.usersync.ldap.user.searchbase: "{{ auth_provider.ldap_search_base.user }}"
+          ranger.usersync.source.impl.class: org.apache.ranger.ldapusersync.process.LdapUserGroupBuilder
+          ranger.usersync.user.searchenabled: 'true'
+#     RANGER_KMS:
+#        RANGER_KMS_SERVER:
+      INFRA_SOLR:
+        SERVICEWIDE:
+          #set false for 7.1.7 since it doesnt build cm_solr
+          enable_ranger_authorization: false
+        SOLR_SERVER:
+          solr_graceful_stop_timeout: 5
+      SPARK3_ON_YARN:
+        SPARK3_YARN_HISTORY_SERVER:
+          ssl_enabled: true
+          ssl_server_keystore_location: /opt/cloudera/security/pki/host.jks
+          ssl_server_keystore_password: "{{ common_password }}"
+          history_server_spnego_enabled: false
+      YARN:
+        SERVICEWIDE:
+          hadoop_secure_web_ui: false
+        JOBHISTORY:
+          mr2_jobhistory_java_heapsize: 134217728
+        NODEMANAGER:
+          node_manager_java_heapsize: 134217728
+          yarn_nodemanager_resource_memory_mb: 2048
+          yarn_nodemanager_resource_cpu_vcores: 2
+          #yarn_nodemanager_local_dirs: "/data1/yarn/nm,/data2/yarn/nm,/data3/yarn/nm,/data4/yarn/nm"
+          #yarn_nodemanager_log_dirs: "/data1/yarn/container-logs,/data2/yarn/container-logs,/data3/yarn/container-logs,/data4/yarn/container-logs"
+        RESOURCEMANAGER:
+          resource_manager_java_heapsize: 134217728
+          yarn_scheduler_maximum_allocation_mb: 2048
+          yarn_scheduler_maximum_allocation_vcores: 2
+      ZOOKEEPER:
+        SERVICEWIDE:
+          zookeeper_datadir_autocreate: true
+          service_config_suppression_server_count_validator: true
+        SERVER:
+          zookeeper_server_java_heapsize: 134217728
+          maxSessionTimeout: 60000
+          dataDir: /zookeeper
+          dataLogDir: /zookeeper
+          maxClientCnxns: 1200
 
-common_password:    "//TODO:UpdatePass"         # For external services, e.g. AD, TLS
-db_password:        "//TODO:UpdatePass"
-admin_password:     "//TODO:UpdatePass"  
+    databases:
+      HIVE:
+        host: "{{ onedd_database_host }}"
+        port: "{{ onedd_database_port }}"
+        name: "{{ onedd_database.HIVE.name }}"
+        user: "{{ onedd_database.HIVE.user }}"
+        password: "{{ onedd_database.HIVE.password }}"
+      HUE:
+        host: "{{ onedd_database_host }}"
+        port: "{{ onedd_database_port }}"
+        name: "{{ onedd_database.HUE.name }}"
+        user: "{{ onedd_database.HUE.user }}"
+        password: "{{ onedd_database.HUE.password }}"
+      OOZIE:
+        host: "{{ onedd_database_host }}"
+        port: "{{ onedd_database_port }}"
+        name: "{{ onedd_database.OOZIE.name }}"
+        user: "{{ onedd_database.OOZIE.user }}"
+        password: "{{ onedd_database.OOZIE.password }}"
+      RANGER:
+        host: "{{ onedd_database_host }}"
+        port: "{{ onedd_database_port }}"
+        name: "{{ onedd_database.RANGER.name }}"
+        user: "{{ onedd_database.RANGER.user }}"
+        password: "{{ onedd_database.RANGER.password }}"
+      RANGER_KMS:
+        host: "{{ onedd_database_host }}"
+        port: "{{ onedd_database_port }}"
+        name: "{{ onedd_database.RANGER_KMS.name }}"
+        user: "{{ onedd_database.RANGER_KMS.user }}"
+        password: "{{ onedd_database.RANGER_KMS.password }}"
 
-deployment_tags:
-  deployment:       "{{ name_prefix }}"
-  deploy-tool:      cloudera-deploy
-#ssh:
-#  key_path: "definitions/"
-#  public_key_id: "{{ name_prefix }}_ssh_rsa"
-#  public_key_file: "id_rsa.pub"
-#  private_key_file: "id_rsa"
+    host_templates:
+      Master1:
+        HBASE: [MASTER, REGIONSERVER, GATEWAY]
+        HDFS: [NAMENODE, JOURNALNODE, FAILOVERCONTROLLER, HTTPFS, GATEWAY]
+        HIVE: [GATEWAY]
+        HIVE_ON_TEZ: [GATEWAY]
+        KAFKA: [KAFKA_BROKER]
+        KNOX: [KNOX_GATEWAY]
+        OZONE: [OZONE_RECON, GATEWAY]
+        SCHEMA_REGISTRY: [SCHEMA_REGISTRY_SERVER]
+        SPARK3_ON_YARN: [GATEWAY]
+        TEZ: [GATEWAY]
+        YARN: [RESOURCEMANAGER, JOBHISTORY, GATEWAY]
+        ZOOKEEPER: [SERVER]
+      Master2:
+        HBASE: [MASTER, REGIONSERVER, GATEWAY]
+        HDFS: [NAMENODE, JOURNALNODE, FAILOVERCONTROLLER, GATEWAY]
+        HIVE: [GATEWAY]
+        HIVE_ON_TEZ: [HIVESERVER2, GATEWAY]
+        KAFKA: [KAFKA_BROKER]
+        OZONE: [OZONE_MANAGER, STORAGE_CONTAINER_MANAGER, GATEWAY]
+        SPARK3_ON_YARN: [GATEWAY]
+        TEZ: [GATEWAY]
+        YARN: [RESOURCEMANAGER, GATEWAY]
+        ZOOKEEPER: [SERVER]
+      Master3:
+        HBASE: [REGIONSERVER, GATEWAY]
+        HDFS: [JOURNALNODE, GATEWAY]
+        HIVE: [GATEWAY]
+        HIVE_ON_TEZ: [GATEWAY]
+        INFRA_SOLR: [SOLR_SERVER]
+        KAFKA: [KAFKA_BROKER]
+        OZONE: [OZONE_MANAGER, STORAGE_CONTAINER_MANAGER, GATEWAY]
+        QUEUEMANAGER: [QUEUEMANAGER_WEBAPP, QUEUEMANAGER_STORE]
+        SPARK3_ON_YARN: [SPARK3_YARN_HISTORY_SERVER, GATEWAY]
+        TEZ: [GATEWAY]
+        YARN: [RESOURCEMANAGER, GATEWAY]
+        ZOOKEEPER: [SERVER]
+      Master4:
+        ATLAS: [ATLAS_SERVER]
+        CRUISE_CONTROL: [CRUISE_CONTROL_SERVER]
+        HDFS: [GATEWAY]
+        HIVE: [HIVEMETASTORE, GATEWAY]
+        HIVE_ON_TEZ: [HIVESERVER2, GATEWAY]
+        HUE: [HUE_SERVER, HUE_LOAD_BALANCER, KT_RENEWER]
+        INFRA_SOLR: [SOLR_SERVER]
+        KNOX: [KNOX_GATEWAY]
+        OOZIE: [OOZIE_SERVER]
+        OZONE: [OZONE_MANAGER, STORAGE_CONTAINER_MANAGER, GATEWAY]
+        QUEUEMANAGER: [QUEUEMANAGER_WEBAPP, QUEUEMANAGER_STORE]
+        RANGER: [RANGER_ADMIN, RANGER_TAGSYNC, RANGER_USERSYNC]
+        RANGER_KMS: [RANGER_KMS_SERVER]
+        SPARK3_ON_YARN: [SPARK3_YARN_HISTORY_SERVER, GATEWAY]
+        TEZ: [GATEWAY]
+        YARN: [RESOURCEMANAGER, GATEWAY]
+        
+      Workers:
+        HDFS: [DATANODE, GATEWAY]
+        HIVE: [GATEWAY]
+        HIVE_ON_TEZ: [GATEWAY]
+        SPARK3_ON_YARN: [GATEWAY]
+        TEZ: [GATEWAY]
+        YARN: [NODEMANAGER, GATEWAY]
+        OZONE: [OZONE_DATANODE, S3_GATEWAY, GATEWAY]
 
-### Teardown Controls
-teardown_everything: true
-teardown_cluster: "all"
-teardown_preserve_parcels: true
-teardown_database: false
+      NiFi1:
+        NIFI: [NIFI_NODE, GATEWAY]
+        NIFIREGISTRY: [NIFI_REGISTRY_SERVER, GATEWAY]
+      NiFi2:
+        NIFI: [NIFI_NODE, GATEWAY]
 
-kerberos_activated: True
-encryption_activated: True
-# tls_activated: True
-# autotls: True
+      Utility:
+        HDFS: [GATEWAY]
+        HIVE: [GATEWAY]
+        HIVE_ON_TEZ: [GATEWAY]
+        HUE: [HUE_SERVER, HUE_LOAD_BALANCER, KT_RENEWER]
+        OZONE: [GATEWAY]        
+        TEZ: [GATEWAY]
+        YARN: [GATEWAY]
 
-jdk_version: 11
+mgmt:
+  name: Cloudera Management Service
+  services: [ALERTPUBLISHER, EVENTSERVER, HOSTMONITOR, REPORTSMANAGER, SERVICEMONITOR]
+  security:
+    tls: true
+  configs:
+    HOSTMONITOR:
+      firehose_heapsize: 1073741824
+      firehose_non_java_memory_bytes: 2147483648
+    SERVICEMONITOR:
+      firehose_heapsize: 2147483648
+      firehose_non_java_memory_bytes: 6442450944
+      role_config_suppression_firehose_service_monitor_non_java_memory_role_validator: true
+  databases:
+    REPORTSMANAGER:
+      host: "{{ onedd_database_host }}"
+      port: "{{ onedd_database_port }}"
+      name: "{{ onedd_database.RMAN.name }}"
+      user: "{{ onedd_database.RMAN.user }}"
+      password: "{{ onedd_database.RMAN.password }}"
 
-repositories:
-  ## Offical CDH 7.1.9 + CHF4
-  - https://archive.cloudera.com/p/cdh7/7.1.9.6/parcels/
-  ## Spark 3.3 + CHF2
-  - https://archive.cloudera.com/p/spark3/3.3.7190.3/parcels/
-  ## CFM 2.1.6 + SP1
-  - https://archive.cloudera.com/p/cfm2/2.1.6.1000/redhat8/yum/tars/parcel
-  
-
-# Connect FreeIPA to Knox and Ranger
-freeipa_activated: False
-
-# FreeIPA client install on cluster nodes is done during pre_setup, so suppress
-freeipa_enroll: no 
-
-# Defer user and group creation to SSSD/FreeIPA registration
-# Use when you dont need ansible to run "ca_server"
-skip_user_group_init: no
-
-### Cloudera Manager
-# For repor override, check https://github.com/cloudera-labs/cloudera.cluster/blob/main/docs/roles/cloudera_manager/repo.md for version specific details
-
-# The latest version of CM (as of March 11, 2024) - https://docs.cloudera.com/cdp-private-cloud-base/7.1.9/manager-release-notes/topics/chf4-cm-7113.html
-cloudera_manager_version: 7.11.3.6
-
-cloudera_manager_csds:
-  - https://archive.cloudera.com/p/cfm2/2.1.3.0/redhat7/yum/tars/parcel/NIFI-1.15.2.2.1.3.0-125.jar
-  - https://archive.cloudera.com/p/cfm2/2.1.3.0/redhat7/yum/tars/parcel/NIFIREGISTRY-1.15.2.2.1.3.0-125.jar
-
-#-- Override the above remote remote repo with a local one:
-#  - http://<cla-tt-2a-dp1:8080>/csd/NIFI-1.11.4.2.0.4.0-80.jar
-#  - http://<cla-tt-2a-dp1:8080>/csd/NIFIREGISTRY-0.6.0.2.0.4.0-80.jar
-#  - http://<cla-tt-2a-dp1:8080>/csd/FLINK-1.13.2-csa1.5.0.1-cdh7.1.7.0-551-17559653.jar
-
-# General options
-cloudera_manager_options:
-  CUSTOM_BANNER_HTML: "PVC Base Lab ({{ name_prefix }})"
-  SESSION_TIMEOUT: 43200
-  PARCEL_DISTRIBUTE_RATE_LIMIT_KBS_PER_SECOND: 194560
-  KRB_AUTH_ENABLE: "true"
-
-# Cloudera license
-#license_file: "{{ lookup('ansible.builtin.env', 'CDP_LICENSE_FILE') }}"
-license_file: definitions/resources/license/<license_file>.txt
-
-# License options (this is due to a hardcoded tmp directory on the target/manager node)
-license_local_tmp_path: /tmp/cloudera_license.txt
-
-###  RDBMS
-# //TODO: Change to the correct DB host
-onedd_database_host: <DB-HOST>
-onedd_database_port: 5432
-
-database_type: postgresql
-database_version: 13
-#database_tls: true
-
-# Add detaisls on the external DB for CM Server
-cloudera_manager_database_host: "{{ onedd_database_host }}"
-cloudera_manager_database_type: "{{ database_type }}"
-cloudera_manager_database_name: scm
-cloudera_manager_database_user: scm
-cloudera_manager_database_password:  "{{ db_password }}"
-
-# Details for rest of DBs 
-#--- Service-specific databases
-onedd_database:
-  HIVE:
-    name: metastore
-    user: hive
-    #password: "{{ vault__cloudera_database_passwords.hive }}"
-    password: "{{ db_password }}"
-  HUE:
-    name: hue
-    user: hue
-    password: "{{ db_password }}"
-  OOZIE:
-    name: oozie
-    user: oozie
-    password: "{{ db_password }}"
-  RANGER:
-    name: rangeradmin
-    user: rangeradmin
-    password: "{{ db_password }}"
-  RANGER_KMS:
-    name: rangerkms
-    user: rangerkms
-    password: "{{ db_password }}"  
-  RMAN:
-    name: rman
-    user: rman
-    password: "{{ db_password }}"  
-  
-
-# Active Directory (AD) realm settings
-# //TODO Change Admin User creds / KDC Host details
-ad_service:
-  realm:                  "{{ realm }}"
-  admin_user:             ov_test_cmadmin
-  admin_password:         "{{ admin_password }}"
-  ldap_user:              <ldap-user>@<KRB_REALM>
-  ldap_password:          "{{ admin_password }}"
-  kdc_host:               <kdc-host>
-
-
-### Active Directory
-krb5_kdc_type:            Active Directory
-krb5_realm:               "{{ ad_service.realm }}"
-krb5_kdc_admin_user:      "{{ ad_service.admin_user }}@{{ krb5_realm }}"  # "{{ vault__krb5_kdc_admin_account }}@{{ krb5_realm }}"
-krb5_kdc_admin_password:  "{{ ad_service.admin_password }}"               # "{{ vault__krb5_kdc_admin_password }}"
-krb5_enc_types:           "aes256-cts aes128-cts rc4-hmac "
-krb5_kdc_host:            "{{ ad_service.kdc_host }}"
-krb5_kdc_active_directory_prefix: "onedd_"
-krb5_kdc_active_directory_suffix: "OU=<>,OU=<>,OU=Cloudera,DC=<>,DC=COM" 
-
-# //TODO: Set correct group
-###  CM External Auth - Active Directory as LDAP
-cloudera_manager_external_auth:
-  provider: ad_service
-  external_first: no
-  external_only: no
-  role_mappings:
-  - group: <ad_group_name>
-    roles: [ROLE_ADMIN]
-
-# Set in cloudera_manager.external_auth.tasks.main:26
-auth_provider: "{{ auth_providers[cloudera_manager_external_auth.provider] }}"
-
-
-# //TODO: Change Base DN details.
-#base_dn: "dc={{ ad_service.realm.split('.') | map('lower') | join(',dc=') }}"
-#user_dn: "cn=users,cn=accounts,{{ base_dn }}"
-#group_dn: "cn=groups,cn=accounts,{{ base_dn }}"
-base_dn: "OU=<ou>,OU=<dept>,OU=Cloudera,DC=<>,DC=COM"
-user_dn: "OU=users,{{ base_dn }}"
-group_dn: "OU=groups,{{ base_dn }}"
-
-## Authentication Provider (AD Service)
-auth_providers:
-  ad_service:
-    ldap_url: "ldap://{{ ad_service.kdc_host }}"
-    ldap_base_dn: "{{ base_dn }}"
-    ldap_bind_user_dn: "{{ ad_service.ldap_user }}"
-    ldap_bind_password: "{{ ad_service.ldap_password }}"
-    ldap_search_base:
-      user: "{{ user_dn }}"
-      group: "{{ group_dn }}"
-    ldap_object_class:
-      user: "person"
-      group: "posixgroup"
-    ldap_search_filter: # Used for mapping Services (Atlas, Ranger, etc.) to LDAP
-      user: "(&(uid={0})(objectClass=person))"
-      member: "(&(member={0})(objectClass=group))"
-      group: (&(member={0})(objectclass=posixgroup)(!(cn=admins)))
-    ldap_attribute: # Used for mapping CM to LDAP
-     user: uid # Set to (uid={0})
-     member: member # defaults to (member={0})
-    ldap_attr_user_name: "uid"
-    ldap_attr_group_name: "cn"
-    ldap_attr_group_membership: "member"
-    type: LDAP
-
-###  CM External Auth - Active Directory as LDAP
-
-# Settings for FreeIPA sidecar deployment
-cloudera_manager_external_auth:
-  provider: ad_service
-  external_first: no
-  external_only: no
-  role_mappings:
-  - group: ov_group_admin
-    roles: [ROLE_ADMIN]
-
-# Set in cloudera_manager.external_auth.tasks.main:26
-#auth_provider: "{{ auth_providers[cloudera_manager_external_auth.provider] }}"
-
-
-## TLS signing
-#skip_ipa_signing: no # This is the default
-#remote_ipa_server: "{{ groups['freeipa'] | first | default('') }}"
-
-tls_key_password: "{{ common_password }}"
-tls_keystore_password: "{{ common_password }}"
-tls_truststore_password: "changeit" # DEFAULT JAVA TRUSTSTORE PASSWORD
-# tls_truststore_password: "{{ common_password }}"
-
-# Vars from legacy cloudera-Deploy
-use_auto_repo_mirror: no
-use_default_cluster_definition: no
-use_download_mirror: no
-preload_cm_parcel_repo: yes
-
+hosts:
+  configs:
+    host_default_proc_memswap_thresholds:
+      warning: never
+      critical: never
+    host_memswap_thresholds:
+      warning: never
+      critical: never
+    host_config_suppression_agent_system_user_group_validator: true
+    host_config_suppression_memory_overcommitted_validator: true
