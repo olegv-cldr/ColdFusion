@@ -17,12 +17,12 @@
 name_prefix:        "onedd"
 
 #//TODO Change to the correct values          
-domain:             "adlab.sec.cloudera.com"  # The deployment subdomain (private) managed by the local AD server
-realm:              "ADLAB.SEC.CLOUDERA.COM"  # The Kerberos realm managed by the local AD server
+domain:             "<krb.domain>"  # The deployment subdomain (private) managed by the local AD server
+realm:              "<KRB.REALM>"  # The Kerberos realm managed by the local AD server
 
-common_password:    "Cl0uder@P@ss1ToUpdate"         # For external services, e.g. AD, TLS
-db_password:        "cloudera"
-admin_password:     "Cloudera@123"  
+common_password:    "//TODO:UpdatePass"         # For external services, e.g. AD, TLS
+db_password:        "//TODO:UpdatePass"
+admin_password:     "//TODO:UpdatePass"  
 
 deployment_tags:
   deployment:       "{{ name_prefix }}"
@@ -89,14 +89,14 @@ cloudera_manager_options:
 
 # Cloudera license
 #license_file: "{{ lookup('ansible.builtin.env', 'CDP_LICENSE_FILE') }}"
-license_file: definitions/resources/license/onedd_2023_2024_cloudera_license.txt
+license_file: definitions/resources/license/<license_file>.txt
 
 # License options (this is due to a hardcoded tmp directory on the target/manager node)
 license_local_tmp_path: /tmp/cloudera_license.txt
 
 ###  RDBMS
 # //TODO: Change to the correct DB host
-onedd_database_host: oleg-aws.vpc.cloudera.com
+onedd_database_host: <DB-HOST>
 onedd_database_port: 5432
 
 database_type: postgresql
@@ -146,9 +146,9 @@ ad_service:
   realm:                  "{{ realm }}"
   admin_user:             ov_test_cmadmin
   admin_password:         "{{ admin_password }}"
-  ldap_user:              oleg@ADLAB.SEC.CLOUDERA.COM  #-- "CN=ov_test_cmadmin,OU=users,OU=oleg,OU=Eng,OU=Cloudera,DC=ADLAB,DC=SEC,DC=CLOUDERA,DC=COM"
+  ldap_user:              <ldap-user>@<KRB_REALM>
   ldap_password:          "{{ admin_password }}"
-  kdc_host:               w2k22-01.adlab.sec.cloudera.com
+  kdc_host:               <kdc-host>
 
 
 ### Active Directory
@@ -159,16 +159,16 @@ krb5_kdc_admin_password:  "{{ ad_service.admin_password }}"               # "{{ 
 krb5_enc_types:           "aes256-cts aes128-cts rc4-hmac "
 krb5_kdc_host:            "{{ ad_service.kdc_host }}"
 krb5_kdc_active_directory_prefix: "onedd_"
-krb5_kdc_active_directory_suffix: "OU=oleg,OU=Eng,OU=Cloudera,DC=ADLAB,DC=SEC,DC=CLOUDERA,DC=COM"    #"OU=clusters,OU={{ vault__krb5_ad_ou }},OU=test-sme-demo,DC=athens,DC=cloudera,DC=com"
+krb5_kdc_active_directory_suffix: "OU=<>,OU=<>,OU=Cloudera,DC=<>,DC=COM" 
 
-# //TODO: Set correct roup
+# //TODO: Set correct group
 ###  CM External Auth - Active Directory as LDAP
 cloudera_manager_external_auth:
   provider: ad_service
   external_first: no
   external_only: no
   role_mappings:
-  - group: ov_group_admin
+  - group: <ad_group_name>
     roles: [ROLE_ADMIN]
 
 # Set in cloudera_manager.external_auth.tasks.main:26
@@ -179,7 +179,7 @@ auth_provider: "{{ auth_providers[cloudera_manager_external_auth.provider] }}"
 #base_dn: "dc={{ ad_service.realm.split('.') | map('lower') | join(',dc=') }}"
 #user_dn: "cn=users,cn=accounts,{{ base_dn }}"
 #group_dn: "cn=groups,cn=accounts,{{ base_dn }}"
-base_dn: "OU=oleg,OU=Eng,OU=Cloudera,DC=ADLAB,DC=SEC,DC=CLOUDERA,DC=COM"
+base_dn: "OU=<ou>,OU=<dept>,OU=Cloudera,DC=<>,DC=COM"
 user_dn: "OU=users,{{ base_dn }}"
 group_dn: "OU=groups,{{ base_dn }}"
 
